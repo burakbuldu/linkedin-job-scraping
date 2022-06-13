@@ -10,7 +10,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 
 # Driver path
-path = '/Users/kurum/Downloads/chromedriver.exe'
+path = '/Users/Lenovo/Downloads/chromedriver.exe'
 driver = webdriver.Chrome(path)  
 
 # Maximize Window
@@ -22,22 +22,14 @@ driver.implicitly_wait(10)
 
 # Enter to the site
 driver.get('https://www.linkedin.com/login');
-time.sleep(2)
+time.sleep(0.5)
 
-# Accept cookies
-driver.find_element_by_xpath("/html/body/div/main/div[1]/div/section/div/div[2]/button[2]").click()
 
-# User Credentials
-# Reading txt file where we have our user credentials
-with open('user_credentials.txt', 'r',encoding="utf-8") as file:
-    user_credentials = file.readlines()
-    user_credentials = [line.rstrip() for line in user_credentials]
-
-user_name = lines[0] # First line
-password = lines[1] # Second line
+user_name = "..........." # mail or telephone
+password = "..........." # password
 driver.find_element_by_xpath('//*[@id="username"]').send_keys(user_name)
 driver.find_element_by_xpath('//*[@id="password"]').send_keys(password)
-time.sleep(1)
+time.sleep(0.5)
 
 # Login button
 driver.find_element_by_xpath('//*[@id="organic-div"]/form/div[3]/button').click()
@@ -45,18 +37,23 @@ driver.implicitly_wait(30)
 
 # Jobs page
 driver.find_element_by_xpath('//*[@id="ember19"]').click()
-time.sleep(3)
+time.sleep(0.5)
 # Go to search results directly
-driver.get("https://www.linkedin.com/jobs/search/?geoId=105646813&keywords=junior%20data%20analyst&location=Spain")
-time.sleep(1)
+driver.get("https://www.linkedin.com/jobs/search/?geoId=102105699&keywords=Data%20Analytics&location=T%C3%BCrkiye")
+time.sleep(0.5)
 
 # Get all links for these offers
 links = []
-# Navigate 13 pages
-print('Links are being collected now.')
+# Navigate all pages
+
+allpagesnums = driver.find_elements(By.CSS_SELECTOR, '.artdeco-pagination__indicator')
+
+lastpagenum = int(allpagesnums[len(allpagesnums)-1].text)
+
+print('Links are being collected now. There are '+str(lastpagenum)+' pages of links.')
 try: 
-    for page in range(2,14):
-        time.sleep(2)
+    for page in range(2,lastpagenum):
+        time.sleep(0.5)
         jobs_block = driver.find_element_by_class_name('jobs-search-results__list')
         jobs_list= jobs_block.find_elements(By.CSS_SELECTOR, '.jobs-search-results__list-item')
     
@@ -72,8 +69,8 @@ try:
         
         print(f'Collecting the links in the page: {page-1}')
         # go to next page:
-        driver.find_element_by_xpath(f"//button[@aria-label='Page {page}']").click()
-        time.sleep(3)
+        driver.find_element_by_xpath(f"//button[@aria-label='{page}. Sayfa']").click()
+        time.sleep(0.5)
 except:
     pass
 print('Found ' + str(len(links)) + ' links for job offers')
@@ -96,10 +93,10 @@ for i in range(len(links)):
     try:
         driver.get(links[i])
         i=i+1
-        time.sleep(2)
+        time.sleep(0.5)
         # Click See more.
         driver.find_element_by_class_name("artdeco-card__actions").click()
-        time.sleep(2)
+        time.sleep(0.5)
     except:
         pass
     
@@ -117,30 +114,25 @@ for i in range(len(links)):
             j+= 1
         except:
             pass
-        time.sleep(2)
+        time.sleep(0.5)
         
         # Scraping the job description
     job_description = driver.find_elements_by_class_name('jobs-description__content')
     for description in job_description:
         job_text = description.find_element_by_class_name("jobs-box__html-content").text
+        job_text = job_text.replace(",", " ")
+        job_text = job_text.replace("\n", " ")
         job_desc.append(job_text)
         print(f'Scraping the Job Offer {j}')
-        time.sleep(2)  
+        time.sleep(0.5)  
             
 # Creating the dataframe 
 df = pd.DataFrame(list(zip(job_titles,company_names,
                     company_locations,work_methods,
-                    post_dates,work_times)),
+                    post_dates,work_times,job_desc)),
                     columns =['job_title', 'company_name',
                            'company_location','work_method',
-                           'post_date','work_time'])
+                           'post_date','work_time','job_desc'])
 
 # Storing the data to csv file
 df.to_csv('job_offers.csv', index=False)
-
-# Output job descriptions to txt file
-with open('job_descriptions.txt', 'w',encoding="utf-8") as f:
-    for line in job_desc:
-        f.write(line)
-        f.write('\n')
-
